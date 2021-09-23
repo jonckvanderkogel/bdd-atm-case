@@ -1,0 +1,31 @@
+scalar DateTime
+
+type Query {
+    retrieveBalance(accountNr: String!): Balance
+}
+
+type Mutation {
+    withdrawBills(withdrawBillsInput: WithdrawBillsInput!): [BillSet]
+}
+
+input WithdrawBillsInput {
+  amount: Int!
+  accountNr: String!
+}
+
+type BillSet {
+    bill: Bill!
+    nr: Int!
+}
+
+type Balance {
+    amount: Int!
+    balanceDate: DateTime!
+}
+
+enum Bill {
+    TEN,
+    TWENTY,
+    FIFTY,
+    HUNDRED
+}
