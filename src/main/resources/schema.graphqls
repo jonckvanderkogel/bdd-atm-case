@@ -6,6 +6,7 @@ type Query {
 
 type Mutation {
     withdrawBills(withdrawBillsInput: WithdrawBillsInput!): [BillSet]
+    withdrawBillsWithFees(withdrawBillsInput: WithdrawBillsInput!): [BillSet]
 }
 
 input WithdrawBillsInput {

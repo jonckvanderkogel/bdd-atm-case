@@ -3,16 +3,20 @@ package com.ing.bdd.service;
 import com.ing.bdd.model.Balance;
 import com.ing.bdd.model.Bill;
 import com.ing.bdd.model.BillSet;
+import com.ing.bdd.model.BillSetWrapper;
 import com.ing.bdd.model.WithdrawBillsInput;
+import graphql.GraphQLError;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.SplittableRandom;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ATMServiceTest {
     // Plenty of cash available in the machine
@@ -34,9 +38,12 @@ public class ATMServiceTest {
     @Test
     public void retrieveCurrentBalanceTest() {
         // next int will be 826
-        SplittableRandom random = new SplittableRandom(1l);
-        FundsStorage fundsStorage = new FundsStorage(random, lotsOfCash);
-        ATMService atmService = new ATMService(fundsStorage);
+        SplittableRandom fundsRandom = new SplittableRandom(1l);
+        // next int will be 2726
+        SplittableRandom trackerRandom = new SplittableRandom(1l);
+        FundsStorage fundsStorage = new FundsStorage(fundsRandom, lotsOfCash);
+        WithdrawTracker withdrawTracker = new WithdrawTracker(trackerRandom, fundsStorage);
+        ATMService atmService = new ATMService(fundsStorage, withdrawTracker);
 
         Balance currentBalance = atmService.retrieveBalance("123");
 
@@ -46,9 +53,12 @@ public class ATMServiceTest {
     @Test
     public void withdrawBillsWithPlentyOfCashAvailableTest() {
         // next int will be 826
-        SplittableRandom random = new SplittableRandom(1l);
-        FundsStorage fundsStorage = new FundsStorage(random, lotsOfCash);
-        ATMService atmService = new ATMService(fundsStorage);
+        SplittableRandom fundsRandom = new SplittableRandom(1l);
+        // next int will be 2726
+        SplittableRandom trackerRandom = new SplittableRandom(1l);
+        FundsStorage fundsStorage = new FundsStorage(fundsRandom, lotsOfCash);
+        WithdrawTracker withdrawTracker = new WithdrawTracker(trackerRandom, fundsStorage);
+        ATMService atmService = new ATMService(fundsStorage, withdrawTracker);
 
         List<BillSet> billSets = atmService.withdrawBills(new WithdrawBillsInput(100, "123"));
 
@@ -61,9 +71,12 @@ public class ATMServiceTest {
     @Test
     public void withdrawBillsNotEnoughCashAvailable() {
         // next int will be 826
-        SplittableRandom random = new SplittableRandom(1l);
-        FundsStorage fundsStorage = new FundsStorage(random, onlyFewTens);
-        ATMService atmService = new ATMService(fundsStorage);
+        SplittableRandom fundsRandom = new SplittableRandom(1l);
+        // next int will be 2726
+        SplittableRandom trackerRandom = new SplittableRandom(1l);
+        FundsStorage fundsStorage = new FundsStorage(fundsRandom, onlyFewTens);
+        WithdrawTracker withdrawTracker = new WithdrawTracker(trackerRandom, fundsStorage);
+        ATMService atmService = new ATMService(fundsStorage, withdrawTracker);
 
         List<BillSet> billSets = atmService.withdrawBills(new WithdrawBillsInput(100, "123"));
 
@@ -71,5 +84,39 @@ public class ATMServiceTest {
         assertEquals(1, billSets.size());
         assertEquals(5, billSets.get(0).getNr());
         assertEquals(Bill.TEN, billSets.get(0).getBill());
+    }
+
+    @Test
+    public void withdrawBillsWithFeesAtmWorks() {
+        // next int will be 826
+        SplittableRandom fundsRandom = new SplittableRandom(1l);
+        // next int will be 2726
+        SplittableRandom trackerRandom = new SplittableRandom(1l);
+        FundsStorage fundsStorage = new FundsStorage(fundsRandom, lotsOfCash);
+        WithdrawTracker withdrawTracker = new WithdrawTracker(trackerRandom, fundsStorage);
+        ATMService atmService = new ATMService(fundsStorage, withdrawTracker);
+
+        List<BillSet> billSets = atmService.withdrawBillsWithFees(new WithdrawBillsInput(100, "123")).getBillSets();
+
+        // just expecting 10 10s
+        assertEquals(1, billSets.size());
+        assertEquals(1, billSets.get(0).getNr());
+        assertEquals(Bill.HUNDRED, billSets.get(0).getBill());
+    }
+
+    @Test
+    public void withdrawBillsWithFeesCrashes() {
+        // next int will be 826
+        SplittableRandom fundsRandom = new SplittableRandom(1l);
+        // next int will be 2726
+        SplittableRandom trackerRandom = new SplittableRandom(7l);
+        FundsStorage fundsStorage = new FundsStorage(fundsRandom, lotsOfCash);
+        WithdrawTracker withdrawTracker = new WithdrawTracker(trackerRandom, fundsStorage);
+        ATMService atmService = new ATMService(fundsStorage, withdrawTracker);
+
+        Optional<GraphQLError> error = atmService.withdrawBillsWithFees(new WithdrawBillsInput(100, "123")).getError();
+
+        assertTrue(error.isPresent());
+        assertEquals("ATM crashed!", error.get().getMessage());
     }
 }
