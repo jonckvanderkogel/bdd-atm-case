@@ -54,8 +54,8 @@ public class ATMServiceTest {
 
         // just expecting 10 10s
         assertEquals(1, billSets.size());
-        assertEquals(10, billSets.get(0).getNr());
-        assertEquals(Bill.TEN, billSets.get(0).getBill());
+        assertEquals(1, billSets.get(0).getNr());
+        assertEquals(Bill.HUNDRED, billSets.get(0).getBill());
     }
 
     @Test

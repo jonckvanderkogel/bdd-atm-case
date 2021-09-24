@@ -14,6 +14,6 @@ public enum Bill {
     }
 
     public static List<Bill> possibleBills() {
-        return List.of(Bill.values());
+        return List.of(Bill.values()).reverse();
     }
 }
