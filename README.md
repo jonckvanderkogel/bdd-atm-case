@@ -20,4 +20,11 @@ mutation {
     nr
   }
 }
+
+mutation {
+  withdrawBillsWithFees(withdrawBillsInput: {amount:100, accountNr: "123"}) {
+    bill
+    nr
+  }
+}
 ```
