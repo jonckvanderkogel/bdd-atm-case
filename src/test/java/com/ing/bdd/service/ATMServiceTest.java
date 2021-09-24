@@ -4,55 +4,40 @@ import com.ing.bdd.model.Balance;
 import com.ing.bdd.model.Bill;
 import com.ing.bdd.model.BillSet;
 import com.ing.bdd.model.WithdrawBillsInput;
-import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.SplittableRandom;
+import java.util.function.BiFunction;
 
+import static com.ing.bdd.testutil.Util.generateBillMap;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ATMServiceTest {
     // Plenty of cash available in the machine
-    private Map<Bill, Integer> lotsOfCash = generateBillMap(1000, 1000, 1000, 1000);
+    private final Map<Bill, Integer> lotsOfCash = generateBillMap(1000, 1000, 1000, 1000);
     // only 5 10s available
-    private Map<Bill, Integer> onlyFewTens = generateBillMap(5, 0, 0, 0);
-
-    private Map<Bill, Integer> generateBillMap(Integer tens, Integer twenties, Integer fifties, Integer hundreds) {
-        return new HashMap<>(
-            Map.of(
-                Bill.TEN, tens,
-                Bill.TWENTY, twenties,
-                Bill.FIFTY, fifties,
-                Bill.HUNDRED, hundreds
-            )
-        );
-    }
+    private final Map<Bill, Integer> onlyFewTens = generateBillMap(5, 0, 0, 0);
+    private final BiFunction<Integer,Integer,Integer> randomFun = (i,j) -> 1000;
 
     @Test
     public void retrieveCurrentBalanceTest() {
-        // next int will be 826
-        SplittableRandom random = new SplittableRandom(1l);
-        FundsStorage fundsStorage = new FundsStorage(random, lotsOfCash);
+        FundsStorage fundsStorage = new FundsStorage(randomFun, lotsOfCash);
         ATMService atmService = new ATMService(fundsStorage);
 
         Balance currentBalance = atmService.retrieveBalance("123");
 
-        assertEquals(826, currentBalance.getAmount());
+        assertEquals(1000, currentBalance.getAmount());
     }
 
     @Test
     public void withdrawBillsWithPlentyOfCashAvailableTest() {
-        // next int will be 826
-        SplittableRandom random = new SplittableRandom(1l);
-        FundsStorage fundsStorage = new FundsStorage(random, lotsOfCash);
+        FundsStorage fundsStorage = new FundsStorage(randomFun, lotsOfCash);
         ATMService atmService = new ATMService(fundsStorage);
 
         List<BillSet> billSets = atmService.withdrawBills(new WithdrawBillsInput(100, "123"));
 
-        // just expecting 10 10s
+        // just expecting 1 100 bill
         assertEquals(1, billSets.size());
         assertEquals(1, billSets.get(0).getNr());
         assertEquals(Bill.HUNDRED, billSets.get(0).getBill());
@@ -60,9 +45,7 @@ public class ATMServiceTest {
 
     @Test
     public void withdrawBillsNotEnoughCashAvailable() {
-        // next int will be 826
-        SplittableRandom random = new SplittableRandom(1l);
-        FundsStorage fundsStorage = new FundsStorage(random, onlyFewTens);
+        FundsStorage fundsStorage = new FundsStorage(randomFun, onlyFewTens);
         ATMService atmService = new ATMService(fundsStorage);
 
         List<BillSet> billSets = atmService.withdrawBills(new WithdrawBillsInput(100, "123"));

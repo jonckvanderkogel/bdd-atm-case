@@ -9,13 +9,13 @@ import lombok.RequiredArgsConstructor;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.SplittableRandom;
+import java.util.function.BiFunction;
 
 import static com.ing.bdd.tailrecursion.TailCalls.done;
 
 @RequiredArgsConstructor
 public class FundsStorage {
-    private final SplittableRandom random;
+    private final BiFunction<Integer,Integer,Integer> random;
     private final Map<Bill, Integer> billsPresent;
 
     private final Map<String, Integer> database = new HashMap<>();
@@ -26,7 +26,7 @@ public class FundsStorage {
     }
 
     private Integer initializeAccount() {
-        return random.nextInt(100, 5000);
+        return random.apply(100, 5000);
     }
 
     public synchronized java.util.List<BillSet> withdrawBills(String accountNr, Integer amountRequested) {
