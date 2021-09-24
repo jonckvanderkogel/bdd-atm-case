@@ -1,6 +1,5 @@
 package com.ing.bdd.model;
 
-import graphql.GraphQL;
 import graphql.GraphQLError;
 import graphql.GraphqlErrorBuilder;
 import lombok.Getter;

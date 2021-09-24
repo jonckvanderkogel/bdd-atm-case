@@ -3,10 +3,8 @@ package com.ing.bdd.service;
 import com.ing.bdd.model.Balance;
 import com.ing.bdd.model.Bill;
 import com.ing.bdd.model.BillSet;
-import com.ing.bdd.model.BillSetWrapper;
 import com.ing.bdd.model.WithdrawBillsInput;
 import graphql.GraphQLError;
-import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
