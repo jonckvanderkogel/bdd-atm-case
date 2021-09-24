@@ -10,7 +10,6 @@ import java.util.SplittableRandom;
 @RequiredArgsConstructor
 public class WithdrawTracker {
     private final SplittableRandom random;
-
     private final FundsStorage fundsStorage;
     private final Map<String, Integer> database = new HashMap<>();
 
@@ -19,17 +18,19 @@ public class WithdrawTracker {
     }
 
     public synchronized BillSetWrapper withdrawBillsWithFees(String accountNr, Integer amountRequested) {
-        BillSetWrapper result;
         Integer amountToDeduct = calculateAmountIncludingFees(accountNr, amountRequested);
-        if (atmCrashes()) {
-            result = new BillSetWrapper("ATM crashed!");
-        } else {
-            result = new BillSetWrapper(fundsStorage.withdrawBills(accountNr, amountToDeduct));
-        }
+        BillSetWrapper result = withdrawBills(accountNr, amountToDeduct);
         if (withdrawSuccess(result)) {
             updateWithdrawCounter(accountNr);
         }
         return result;
+    }
+
+    private BillSetWrapper withdrawBills(String accountNr, Integer amountToDeduct) {
+        if (atmCrashes()) {
+            return new BillSetWrapper("ATM crashed!");
+        }
+        return new BillSetWrapper(fundsStorage.withdrawBills(accountNr, amountToDeduct));
     }
 
     private Integer calculateAmountIncludingFees(String accountNr, Integer amountRequested) {
