@@ -23,6 +23,6 @@ public class AvailableFundsConfig {
             )
         );
 
-        return new FundsStorage(random, map);
+        return new FundsStorage(random::nextInt, map);
     }
 }
