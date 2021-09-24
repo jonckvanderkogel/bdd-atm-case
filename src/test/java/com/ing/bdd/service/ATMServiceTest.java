@@ -39,7 +39,7 @@ public class ATMServiceTest {
     public void retrieveCurrentBalanceTest() {
         // next int will be 826
         SplittableRandom fundsRandom = new SplittableRandom(1l);
-        // next int will be 2726
+        // next int will be 26
         SplittableRandom trackerRandom = new SplittableRandom(1l);
         FundsStorage fundsStorage = new FundsStorage(fundsRandom, lotsOfCash);
         WithdrawTracker withdrawTracker = new WithdrawTracker(trackerRandom, fundsStorage);
@@ -54,7 +54,7 @@ public class ATMServiceTest {
     public void withdrawBillsWithPlentyOfCashAvailableTest() {
         // next int will be 826
         SplittableRandom fundsRandom = new SplittableRandom(1l);
-        // next int will be 2726
+        // next int will be 26
         SplittableRandom trackerRandom = new SplittableRandom(1l);
         FundsStorage fundsStorage = new FundsStorage(fundsRandom, lotsOfCash);
         WithdrawTracker withdrawTracker = new WithdrawTracker(trackerRandom, fundsStorage);
@@ -72,7 +72,7 @@ public class ATMServiceTest {
     public void withdrawBillsNotEnoughCashAvailable() {
         // next int will be 826
         SplittableRandom fundsRandom = new SplittableRandom(1l);
-        // next int will be 2726
+        // next int will be 26
         SplittableRandom trackerRandom = new SplittableRandom(1l);
         FundsStorage fundsStorage = new FundsStorage(fundsRandom, onlyFewTens);
         WithdrawTracker withdrawTracker = new WithdrawTracker(trackerRandom, fundsStorage);
@@ -90,7 +90,7 @@ public class ATMServiceTest {
     public void withdrawBillsWithFeesAtmWorks() {
         // next int will be 826
         SplittableRandom fundsRandom = new SplittableRandom(1l);
-        // next int will be 2726
+        // next int will be 26
         SplittableRandom trackerRandom = new SplittableRandom(1l);
         FundsStorage fundsStorage = new FundsStorage(fundsRandom, lotsOfCash);
         WithdrawTracker withdrawTracker = new WithdrawTracker(trackerRandom, fundsStorage);
@@ -108,7 +108,7 @@ public class ATMServiceTest {
     public void withdrawBillsWithFeesCrashes() {
         // next int will be 826
         SplittableRandom fundsRandom = new SplittableRandom(1l);
-        // next int will be 2726
+        // next int will be 96
         SplittableRandom trackerRandom = new SplittableRandom(7l);
         FundsStorage fundsStorage = new FundsStorage(fundsRandom, lotsOfCash);
         WithdrawTracker withdrawTracker = new WithdrawTracker(trackerRandom, fundsStorage);
