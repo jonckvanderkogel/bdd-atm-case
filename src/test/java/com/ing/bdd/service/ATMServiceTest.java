@@ -7,7 +7,6 @@ import com.ing.bdd.model.WithdrawBillsInput;
 import graphql.GraphQLError;
 import org.junit.jupiter.api.Test;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -20,7 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ATMServiceTest {
     // Plenty of cash available in the machine
-    private Map<Bill, Integer> lotsOfCash = generateBillMap(1000, 1000, 1000, 1000);
+    private final Map<Bill, Integer> lotsOfCash = generateBillMap(1000, 1000, 1000, 1000);
     // only 5 10s available
     private Map<Bill, Integer> onlyFewTens = generateBillMap(5, 0, 0, 0);
     private final BiFunction<Integer,Integer,Integer> randomFun = (i, j) -> 1000;
