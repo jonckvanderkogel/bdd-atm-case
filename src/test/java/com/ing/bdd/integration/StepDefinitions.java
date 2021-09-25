@@ -2,10 +2,13 @@ package com.ing.bdd.integration;
 
 import com.ing.bdd.model.Bill;
 import com.ing.bdd.model.BillSet;
+import com.ing.bdd.model.BillSetWrapper;
 import com.ing.bdd.model.WithdrawBillsInput;
 import com.ing.bdd.service.ATMService;
 import com.ing.bdd.service.FeeCalculator;
 import com.ing.bdd.service.FundsStorage;
+import com.ing.bdd.testutil.FaultyAtmFun;
+import graphql.GraphQLError;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
@@ -14,6 +17,7 @@ import io.cucumber.java.en.When;
 
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 import static com.ing.bdd.testutil.Util.generateBillMap;
@@ -23,12 +27,20 @@ public class StepDefinitions {
     private ATMService atmService;
     private String accountNr;
     private List<BillSet> billSets;
+    private GraphQLError error;
+    private BiFunction<Integer, Integer, Integer> randomAtmFun = (i, j) -> 1;
+
+
+    @Given("The atm is faulty")
+    public  void theAtmIsFaulty() {
+        randomAtmFun = new FaultyAtmFun();
+    }
 
     @Given("I have {int} Euros in my account")
     public void iHaveEurosInMyAccount(final int amount) {
         Map<Bill, Integer> alwaysEnoughCash = generateBillMap(amount, amount, amount, amount);
         FundsStorage fundsStorage = new FundsStorage((i, j) -> amount, alwaysEnoughCash);
-        FeeCalculator feeCalculator = new FeeCalculator(fundsStorage, (i, j) -> 1);
+        FeeCalculator feeCalculator = new FeeCalculator(fundsStorage, randomAtmFun);
         atmService = new ATMService(fundsStorage, feeCalculator);
     }
 
@@ -42,6 +54,13 @@ public class StepDefinitions {
         this.billSets = atmService.withdrawBills(new WithdrawBillsInput(amount, accountNr));
     }
 
+    @When("I withdraw {int} Euros with fees")
+    public void iWithdrawEurosWithFees(final int amount) {
+        BillSetWrapper billSetWrapper = atmService.withdrawBillsWithFees(new WithdrawBillsInput(amount, accountNr));
+        this.billSets = billSetWrapper.getBillSets();
+        this.error = billSetWrapper.getError().orElse(null);
+    }
+
     @Then("I expect the following set of bills")
     public void thenIExpectTheseBillSets(DataTable dataTable) {
         List<List<String>> rows = dataTable.asLists(String.class);
@@ -50,5 +69,10 @@ public class StepDefinitions {
             .collect(Collectors.toList());
 
         assertThat(expectedBillSets).hasSameElementsAs(this.billSets);
+    }
+
+    @Then("I expect the atm crashed")
+    public void thenIExpectTheAtmCrashed() {
+        assertThat(error.getMessage()).isEqualTo("ATM crashed!");
     }
 }

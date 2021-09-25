@@ -12,7 +12,6 @@ public class FeeCalculator {
     private final FundsStorage fundsStorage;
     private final BiFunction<Integer,Integer,Integer> random;
     private final Map<String, Integer> database = new HashMap<>();
-    private boolean atmCrashOverride;
 
     private Integer initializeCounter() {
         return 0;
@@ -29,7 +28,6 @@ public class FeeCalculator {
 
     private BillSetWrapper withdrawBills(String accountNr, Integer amountToDeduct) {
         if (atmCrashes()) {
-            atmCrashOverride = false;
             return new BillSetWrapper("ATM crashed!");
         }
         return new BillSetWrapper(fundsStorage.withdrawBills(accountNr, amountToDeduct));
@@ -41,7 +39,7 @@ public class FeeCalculator {
     }
 
     private boolean atmCrashes() {
-        return random.apply(0, 10) > 8 || atmCrashOverride;
+        return random.apply(0, 10) > 8;
     }
 
     private void updateWithdrawalCounter(String accountNr) {
@@ -50,9 +48,5 @@ public class FeeCalculator {
 
     private boolean withdrawSuccess(BillSetWrapper billSetWrapper) {
         return billSetWrapper.getError().isPresent() || !billSetWrapper.getBillSets().isEmpty();
-    }
-
-    public void setAtmCrashOverride(boolean override) {
-        atmCrashOverride = override;
     }
 }
