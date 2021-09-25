@@ -5,13 +5,14 @@ import lombok.RequiredArgsConstructor;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.SplittableRandom;
+import java.util.function.BiFunction;
 
 @RequiredArgsConstructor
-public class WithdrawTracker {
-    private final SplittableRandom random;
+public class FeeCalculator {
     private final FundsStorage fundsStorage;
+    private final BiFunction<Integer,Integer,Integer> random;
     private final Map<String, Integer> database = new HashMap<>();
+    private boolean atmCrashOverride;
 
     private Integer initializeCounter() {
         return 0;
@@ -21,32 +22,37 @@ public class WithdrawTracker {
         Integer amountToDeduct = calculateAmountIncludingFees(accountNr, amountRequested);
         BillSetWrapper result = withdrawBills(accountNr, amountToDeduct);
         if (withdrawSuccess(result)) {
-            updateWithdrawCounter(accountNr);
+            updateWithdrawalCounter(accountNr);
         }
         return result;
     }
 
     private BillSetWrapper withdrawBills(String accountNr, Integer amountToDeduct) {
         if (atmCrashes()) {
+            atmCrashOverride = false;
             return new BillSetWrapper("ATM crashed!");
         }
         return new BillSetWrapper(fundsStorage.withdrawBills(accountNr, amountToDeduct));
     }
 
     private Integer calculateAmountIncludingFees(String accountNr, Integer amountRequested) {
-        Integer amountOfWithdraws = database.computeIfAbsent(accountNr, i -> initializeCounter());
-        return amountOfWithdraws >= 1 ? amountRequested / 50 + amountRequested : amountRequested;
+        Integer amountOfWithdrawals = database.computeIfAbsent(accountNr, i -> initializeCounter());
+        return amountOfWithdrawals >= 1 ? amountRequested / 50 + amountRequested + 1: amountRequested;
     }
 
     private boolean atmCrashes() {
-        return random.nextInt(0, 100) > 80;
+        return random.apply(0, 10) > 8 || atmCrashOverride;
     }
 
-    private void updateWithdrawCounter(String accountNr) {
+    private void updateWithdrawalCounter(String accountNr) {
         database.compute(accountNr, (k, v) -> ++v);
     }
 
     private boolean withdrawSuccess(BillSetWrapper billSetWrapper) {
         return billSetWrapper.getError().isPresent() || !billSetWrapper.getBillSets().isEmpty();
+    }
+
+    public void setAtmCrashOverride(boolean override) {
+        atmCrashOverride = override;
     }
 }

@@ -14,7 +14,7 @@ import java.util.List;
 @Service
 public class ATMService {
     private final FundsStorage fundsStorage;
-    private final WithdrawTracker withdrawTracker;
+    private final FeeCalculator feeCalculator;
 
     public Balance retrieveBalance(String accountNr) {
         return new Balance(
@@ -28,6 +28,6 @@ public class ATMService {
     }
 
     public BillSetWrapper withdrawBillsWithFees(WithdrawBillsInput input) {
-        return withdrawTracker.withdrawBillsWithFees(input.getAccountNr(), input.getAmount());
+        return feeCalculator.withdrawBillsWithFees(input.getAccountNr(), input.getAmount());
     }
 }
