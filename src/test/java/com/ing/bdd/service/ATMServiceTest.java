@@ -9,12 +9,10 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.function.BiFunction;
 
 import static com.ing.bdd.testutil.Util.generateBillMap;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ATMServiceTest {
     // Plenty of cash available in the machine
@@ -69,7 +67,7 @@ public class ATMServiceTest {
         FeeCalculator feeCalculator = new FeeCalculator(fundsStorage, atmCrashRandomFun);
         ATMService atmService = new ATMService(fundsStorage, feeCalculator);
 
-        List<BillSet> billSets = atmService.withdrawBillsWithFees(new WithdrawBillsInput(100, "123")).getBillSets();
+        List<BillSet> billSets = atmService.withdrawBillsWithFees(new WithdrawBillsInput(100, "123")).getSuccess();
 
         // just expecting 10 10s
         assertEquals(1, billSets.size());
@@ -83,9 +81,8 @@ public class ATMServiceTest {
         FeeCalculator feeCalculator = new FeeCalculator(fundsStorage, (i, j) -> 9);
         ATMService atmService = new ATMService(fundsStorage, feeCalculator);
 
-        Optional<GraphQLError> error = atmService.withdrawBillsWithFees(new WithdrawBillsInput(100, "123")).getError();
+        GraphQLError error = atmService.withdrawBillsWithFees(new WithdrawBillsInput(100, "123")).getError();
 
-        assertTrue(error.isPresent());
-        assertEquals("ATM crashed!", error.get().getMessage());
+        assertEquals("ATM crashed!", error.getMessage());
     }
 }

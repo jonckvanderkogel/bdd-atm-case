@@ -2,8 +2,9 @@ package com.ing.bdd.service;
 
 import com.ing.bdd.model.Balance;
 import com.ing.bdd.model.BillSet;
-import com.ing.bdd.model.BillSetWrapper;
+import com.ing.bdd.model.SimpleEither;
 import com.ing.bdd.model.WithdrawBillsInput;
+import graphql.GraphQLError;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -27,7 +28,7 @@ public class ATMService {
         return fundsStorage.withdrawBills(input.getAccountNr(), input.getAmount());
     }
 
-    public BillSetWrapper withdrawBillsWithFees(WithdrawBillsInput input) {
+    public SimpleEither<GraphQLError, List<BillSet>> withdrawBillsWithFees(WithdrawBillsInput input) {
         return feeCalculator.withdrawBillsWithFees(input.getAccountNr(), input.getAmount());
     }
 }

@@ -1,9 +1,13 @@
 package com.ing.bdd.service;
 
-import com.ing.bdd.model.BillSetWrapper;
+import com.ing.bdd.model.BillSet;
+import com.ing.bdd.model.SimpleEither;
+import graphql.GraphQLError;
+import graphql.GraphqlErrorBuilder;
 import lombok.RequiredArgsConstructor;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
 
@@ -17,20 +21,23 @@ public class FeeCalculator {
         return 0;
     }
 
-    public synchronized BillSetWrapper withdrawBillsWithFees(String accountNr, Integer amountRequested) {
+    public synchronized SimpleEither<GraphQLError, List<BillSet>> withdrawBillsWithFees(String accountNr, Integer amountRequested) {
         Integer amountToDeduct = calculateAmountIncludingFees(accountNr, amountRequested);
-        BillSetWrapper result = withdrawBills(accountNr, amountToDeduct);
+        SimpleEither<GraphQLError, List<BillSet>> result = withdrawBills(accountNr, amountToDeduct);
         if (withdrawSuccess(result)) {
             updateWithdrawalCounter(accountNr);
         }
         return result;
     }
 
-    private BillSetWrapper withdrawBills(String accountNr, Integer amountToDeduct) {
+    private SimpleEither<GraphQLError, List<BillSet>> withdrawBills(String accountNr, Integer amountToDeduct) {
         if (atmCrashes()) {
-            return new BillSetWrapper("ATM crashed!");
+            return SimpleEither.error(GraphqlErrorBuilder
+                .newError()
+                .message("ATM crashed!")
+                .build());
         }
-        return new BillSetWrapper(fundsStorage.withdrawBills(accountNr, amountToDeduct));
+        return SimpleEither.success(fundsStorage.withdrawBills(accountNr, amountToDeduct));
     }
 
     private Integer calculateAmountIncludingFees(String accountNr, Integer amountRequested) {
@@ -46,7 +53,7 @@ public class FeeCalculator {
         database.compute(accountNr, (k, v) -> ++v);
     }
 
-    private boolean withdrawSuccess(BillSetWrapper billSetWrapper) {
-        return billSetWrapper.getError().isPresent() || !billSetWrapper.getBillSets().isEmpty();
+    private boolean withdrawSuccess(SimpleEither<GraphQLError, List<BillSet>> result) {
+        return result.isSuccess() || result.isError();
     }
 }

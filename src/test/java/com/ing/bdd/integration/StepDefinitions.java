@@ -2,7 +2,7 @@ package com.ing.bdd.integration;
 
 import com.ing.bdd.model.Bill;
 import com.ing.bdd.model.BillSet;
-import com.ing.bdd.model.BillSetWrapper;
+import com.ing.bdd.model.SimpleEither;
 import com.ing.bdd.model.WithdrawBillsInput;
 import com.ing.bdd.service.ATMService;
 import com.ing.bdd.service.FeeCalculator;
@@ -15,6 +15,7 @@ import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
@@ -56,9 +57,9 @@ public class StepDefinitions {
 
     @When("I withdraw {int} Euros with fees")
     public void iWithdrawEurosWithFees(final int amount) {
-        BillSetWrapper billSetWrapper = atmService.withdrawBillsWithFees(new WithdrawBillsInput(amount, accountNr));
-        this.billSets = billSetWrapper.getBillSets();
-        this.error = billSetWrapper.getError().orElse(null);
+        SimpleEither<GraphQLError, List<BillSet>> either = atmService.withdrawBillsWithFees(new WithdrawBillsInput(amount, accountNr));
+        this.billSets = either.isSuccess() ? either.getSuccess() : Collections.emptyList();
+        this.error = either.isError() ? either.getError() : null;
     }
 
     @Then("I expect the following set of bills")
