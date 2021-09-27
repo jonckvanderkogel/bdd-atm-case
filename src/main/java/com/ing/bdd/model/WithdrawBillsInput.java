@@ -1,5 +1,6 @@
 package com.ing.bdd.model;
 
+import graphql.GraphQLError;
 import graphql.GraphqlErrorBuilder;
 import io.vavr.control.Either;
 import lombok.Getter;
@@ -16,7 +17,7 @@ public class WithdrawBillsInput {
     private final Integer amount;
     private final String accountNr;
 
-    public static Either<graphql.GraphQLError, WithdrawBillsInput> of(Map<String, Object> map) {
+    public static Either<GraphQLError, WithdrawBillsInput> of(Map<String, Object> map) {
         try {
             Integer amount = (Integer) map.get("amount");
             String accountNr = (String) map.get("accountNr");
