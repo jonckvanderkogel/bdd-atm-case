@@ -39,7 +39,7 @@ public class ATMServiceTest {
         FeeCalculator feeCalculator = new FeeCalculator(fundsStorage, atmCrashRandomFun);
         ATMService atmService = new ATMService(fundsStorage, feeCalculator);
 
-        List<BillSet> billSets = atmService.withdrawBills(new WithdrawBillsInput(100, "123"));
+        List<BillSet> billSets = atmService.withdrawBills(new WithdrawBillsInput(100, "123")).get();
 
         // just expecting 1 100 bill
         assertEquals(1, billSets.size());
@@ -53,7 +53,7 @@ public class ATMServiceTest {
         FeeCalculator feeCalculator = new FeeCalculator(fundsStorage, atmCrashRandomFun);
         ATMService atmService = new ATMService(fundsStorage, feeCalculator);
 
-        List<BillSet> billSets = atmService.withdrawBills(new WithdrawBillsInput(100, "123"));
+        List<BillSet> billSets = atmService.withdrawBills(new WithdrawBillsInput(100, "123")).get();
 
         // even though I requested 100, I only expect to get 5 10s as
         assertEquals(1, billSets.size());
@@ -67,7 +67,7 @@ public class ATMServiceTest {
         FeeCalculator feeCalculator = new FeeCalculator(fundsStorage, atmCrashRandomFun);
         ATMService atmService = new ATMService(fundsStorage, feeCalculator);
 
-        List<BillSet> billSets = atmService.withdrawBillsWithFees(new WithdrawBillsInput(100, "123")).getSuccess();
+        List<BillSet> billSets = atmService.withdrawBillsWithFees(new WithdrawBillsInput(100, "123")).get();
 
         // just expecting 10 10s
         assertEquals(1, billSets.size());
@@ -81,8 +81,8 @@ public class ATMServiceTest {
         FeeCalculator feeCalculator = new FeeCalculator(fundsStorage, (i, j) -> 9);
         ATMService atmService = new ATMService(fundsStorage, feeCalculator);
 
-        GraphQLError error = atmService.withdrawBillsWithFees(new WithdrawBillsInput(100, "123")).getError();
+        GraphQLError error = atmService.withdrawBillsWithFees(new WithdrawBillsInput(100, "123")).getLeft();
 
-        assertEquals("ATM crashed!", error.getMessage());
+        assertEquals("Upstream service \"ATM\" failed.", error.getMessage());
     }
 }

@@ -2,7 +2,6 @@ package com.ing.bdd.integration;
 
 import com.ing.bdd.model.Bill;
 import com.ing.bdd.model.BillSet;
-import com.ing.bdd.model.SimpleEither;
 import com.ing.bdd.model.WithdrawBillsInput;
 import com.ing.bdd.service.ATMService;
 import com.ing.bdd.service.FeeCalculator;
@@ -14,6 +13,7 @@ import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
+import io.vavr.control.Either;
 
 import java.util.Collections;
 import java.util.List;
@@ -52,14 +52,16 @@ public class StepDefinitions {
 
     @When("I withdraw {int} Euros")
     public void iWithdrawEuros(final int amount) {
-        this.billSets = atmService.withdrawBills(new WithdrawBillsInput(amount, accountNr));
+        this.billSets = atmService
+            .withdrawBills(new WithdrawBillsInput(amount, accountNr))
+            .getOrElseGet(e -> Collections.emptyList());
     }
 
     @When("I withdraw {int} Euros with fees")
     public void iWithdrawEurosWithFees(final int amount) {
-        SimpleEither<GraphQLError, List<BillSet>> either = atmService.withdrawBillsWithFees(new WithdrawBillsInput(amount, accountNr));
-        this.billSets = either.isSuccess() ? either.getSuccess() : Collections.emptyList();
-        this.error = either.isError() ? either.getError() : null;
+        Either<GraphQLError, List<BillSet>> either = atmService.withdrawBillsWithFees(new WithdrawBillsInput(amount, accountNr));
+        this.billSets = either.getOrElseGet(e -> Collections.emptyList());
+        this.error = either.isLeft() ? either.getLeft() : null;
     }
 
     @Then("I expect the following set of bills")
@@ -74,6 +76,6 @@ public class StepDefinitions {
 
     @Then("I expect the atm crashed")
     public void thenIExpectTheAtmCrashed() {
-        assertThat(error.getMessage()).isEqualTo("ATM crashed!");
+        assertThat(error.getMessage()).isEqualTo("Upstream service \"ATM\" failed.");
     }
 }
