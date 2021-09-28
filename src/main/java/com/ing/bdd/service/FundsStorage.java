@@ -33,21 +33,18 @@ public class FundsStorage {
     }
 
     public synchronized Either<GraphQLError, java.util.List<BillSet>> withdrawBills(String accountNr, Integer amountRequested) {
-        if (deductAmountRequestedFromBalance(accountNr, amountRequested)) {
-            return Either.right(determineBillSets(Bill.possibleBills(), List.empty(), amountRequested).invoke().toJavaList());
-        } else {
-            return createLeft(INSUFFICIENT_FUNDS, String.valueOf(amountRequested));
-        }
+        return deductAmountRequestedFromBalance(accountNr, amountRequested)
+            .map(a -> determineBillSets(Bill.possibleBills(), List.empty(), a).invoke().toJavaList());
     }
 
-    private boolean deductAmountRequestedFromBalance(String accountNr, Integer amountRequested) {
+    private Either<GraphQLError, Integer> deductAmountRequestedFromBalance(String accountNr, Integer amountRequested) {
         Integer currentFunds = database.computeIfAbsent(accountNr, i -> initializeAccount());
 
         if (currentFunds >= amountRequested) {
             database.put(accountNr, currentFunds - amountRequested);
-            return true;
+            return Either.right(amountRequested);
         } else {
-            return false;
+            return createLeft(INSUFFICIENT_FUNDS, String.valueOf(amountRequested));
         }
     }
 

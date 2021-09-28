@@ -34,10 +34,8 @@ public class FeeCalculator {
     }
 
     private Either<GraphQLError, List<BillSet>> withdrawBills(String accountNr, Integer amountToDeduct) {
-        if (atmCrashes()) {
-            return createLeft(UPSTREAM_SERVICE_FAILED, "ATM");
-        }
-        return fundsStorage.withdrawBills(accountNr, amountToDeduct);
+        return atmLive()
+            .flatMap(live -> fundsStorage.withdrawBills(accountNr, amountToDeduct));
     }
 
     private Integer calculateAmountIncludingFees(String accountNr, Integer amountRequested) {
@@ -45,8 +43,8 @@ public class FeeCalculator {
         return amountOfWithdrawals >= 1 ? amountRequested / 50 + amountRequested + 1 : amountRequested;
     }
 
-    private boolean atmCrashes() {
-        return random.apply(0, 10) > 8;
+    private Either<GraphQLError, Boolean> atmLive() {
+        return random.apply(0, 10) > 8 ? createLeft(UPSTREAM_SERVICE_FAILED, "ATM") : Either.right(true);
     }
 
     private void updateWithdrawalCounter(String accountNr) {
