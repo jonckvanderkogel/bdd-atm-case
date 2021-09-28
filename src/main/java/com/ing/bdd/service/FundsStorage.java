@@ -3,14 +3,17 @@ package com.ing.bdd.service;
 import com.ing.bdd.model.Bill;
 import com.ing.bdd.model.BillSet;
 import com.ing.bdd.tailrecursion.TailCall;
+import graphql.GraphQLError;
 import io.vavr.collection.List;
+import io.vavr.control.Either;
 import lombok.RequiredArgsConstructor;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiFunction;
 
+import static com.ing.bdd.errors.GraphQLErrorClassification.INSUFFICIENT_FUNDS;
+import static com.ing.bdd.graphql.GraphQLUtils.createLeft;
 import static com.ing.bdd.tailrecursion.TailCalls.done;
 
 @RequiredArgsConstructor
@@ -29,11 +32,11 @@ public class FundsStorage {
         return random.apply(100, 5000);
     }
 
-    public synchronized java.util.List<BillSet> withdrawBills(String accountNr, Integer amountRequested) {
+    public synchronized Either<GraphQLError, java.util.List<BillSet>> withdrawBills(String accountNr, Integer amountRequested) {
         if (deductAmountRequestedFromBalance(accountNr, amountRequested)) {
-            return determineBillSets(Bill.possibleBills(), List.empty(), amountRequested).invoke().toJavaList();
+            return Either.right(determineBillSets(Bill.possibleBills(), List.empty(), amountRequested).invoke().toJavaList());
         } else {
-            return Collections.emptyList();
+            return createLeft(INSUFFICIENT_FUNDS, String.valueOf(amountRequested));
         }
     }
 

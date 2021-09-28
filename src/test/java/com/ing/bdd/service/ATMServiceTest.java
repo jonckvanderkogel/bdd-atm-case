@@ -9,13 +9,10 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.SplittableRandom;
 import java.util.function.BiFunction;
 
 import static com.ing.bdd.testutil.Util.generateBillMap;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ATMServiceTest {
     // Plenty of cash available in the machine
@@ -23,14 +20,13 @@ public class ATMServiceTest {
     // only 5 10s available
     private Map<Bill, Integer> onlyFewTens = generateBillMap(5, 0, 0, 0);
     private final BiFunction<Integer,Integer,Integer> randomFun = (i, j) -> 1000;
+    private final BiFunction<Integer,Integer,Integer> atmCrashRandomFun = (i, j) -> 1;
 
     @Test
     public void retrieveCurrentBalanceTest() {
-        // next int will be 26
-        SplittableRandom trackerRandom = new SplittableRandom(1l);
         FundsStorage fundsStorage = new FundsStorage(randomFun, lotsOfCash);
-        WithdrawTracker withdrawTracker = new WithdrawTracker(trackerRandom, fundsStorage);
-        ATMService atmService = new ATMService(fundsStorage, withdrawTracker);
+        FeeCalculator feeCalculator = new FeeCalculator(fundsStorage, atmCrashRandomFun);
+        ATMService atmService = new ATMService(fundsStorage, feeCalculator);
 
         Balance currentBalance = atmService.retrieveBalance("123");
 
@@ -39,13 +35,11 @@ public class ATMServiceTest {
 
     @Test
     public void withdrawBillsWithPlentyOfCashAvailableTest() {
-        // next int will be 26
-        SplittableRandom trackerRandom = new SplittableRandom(1l);
         FundsStorage fundsStorage = new FundsStorage(randomFun, lotsOfCash);
-        WithdrawTracker withdrawTracker = new WithdrawTracker(trackerRandom, fundsStorage);
-        ATMService atmService = new ATMService(fundsStorage, withdrawTracker);
+        FeeCalculator feeCalculator = new FeeCalculator(fundsStorage, atmCrashRandomFun);
+        ATMService atmService = new ATMService(fundsStorage, feeCalculator);
 
-        List<BillSet> billSets = atmService.withdrawBills(new WithdrawBillsInput(100, "123"));
+        List<BillSet> billSets = atmService.withdrawBills(new WithdrawBillsInput(100, "123")).get();
 
         // just expecting 1 100 bill
         assertEquals(1, billSets.size());
@@ -55,13 +49,11 @@ public class ATMServiceTest {
 
     @Test
     public void withdrawBillsNotEnoughCashAvailable() {
-        // next int will be 26
-        SplittableRandom trackerRandom = new SplittableRandom(1l);
         FundsStorage fundsStorage = new FundsStorage(randomFun, onlyFewTens);
-        WithdrawTracker withdrawTracker = new WithdrawTracker(trackerRandom, fundsStorage);
-        ATMService atmService = new ATMService(fundsStorage, withdrawTracker);
+        FeeCalculator feeCalculator = new FeeCalculator(fundsStorage, atmCrashRandomFun);
+        ATMService atmService = new ATMService(fundsStorage, feeCalculator);
 
-        List<BillSet> billSets = atmService.withdrawBills(new WithdrawBillsInput(100, "123"));
+        List<BillSet> billSets = atmService.withdrawBills(new WithdrawBillsInput(100, "123")).get();
 
         // even though I requested 100, I only expect to get 5 10s as
         assertEquals(1, billSets.size());
@@ -71,13 +63,11 @@ public class ATMServiceTest {
 
     @Test
     public void withdrawBillsWithFeesAtmWorks() {
-        // next int will be 26
-        SplittableRandom trackerRandom = new SplittableRandom(1l);
         FundsStorage fundsStorage = new FundsStorage(randomFun, lotsOfCash);
-        WithdrawTracker withdrawTracker = new WithdrawTracker(trackerRandom, fundsStorage);
-        ATMService atmService = new ATMService(fundsStorage, withdrawTracker);
+        FeeCalculator feeCalculator = new FeeCalculator(fundsStorage, atmCrashRandomFun);
+        ATMService atmService = new ATMService(fundsStorage, feeCalculator);
 
-        List<BillSet> billSets = atmService.withdrawBillsWithFees(new WithdrawBillsInput(100, "123")).getBillSets();
+        List<BillSet> billSets = atmService.withdrawBillsWithFees(new WithdrawBillsInput(100, "123")).get();
 
         // just expecting 10 10s
         assertEquals(1, billSets.size());
@@ -87,15 +77,12 @@ public class ATMServiceTest {
 
     @Test
     public void withdrawBillsWithFeesCrashes() {
-        // next int will be 96
-        SplittableRandom trackerRandom = new SplittableRandom(7l);
         FundsStorage fundsStorage = new FundsStorage(randomFun, lotsOfCash);
-        WithdrawTracker withdrawTracker = new WithdrawTracker(trackerRandom, fundsStorage);
-        ATMService atmService = new ATMService(fundsStorage, withdrawTracker);
+        FeeCalculator feeCalculator = new FeeCalculator(fundsStorage, (i, j) -> 9);
+        ATMService atmService = new ATMService(fundsStorage, feeCalculator);
 
-        Optional<GraphQLError> error = atmService.withdrawBillsWithFees(new WithdrawBillsInput(100, "123")).getError();
+        GraphQLError error = atmService.withdrawBillsWithFees(new WithdrawBillsInput(100, "123")).getLeft();
 
-        assertTrue(error.isPresent());
-        assertEquals("ATM crashed!", error.get().getMessage());
+        assertEquals("Upstream service \"ATM\" failed.", error.getMessage());
     }
 }

@@ -2,8 +2,9 @@ package com.ing.bdd.service;
 
 import com.ing.bdd.model.Balance;
 import com.ing.bdd.model.BillSet;
-import com.ing.bdd.model.BillSetWrapper;
 import com.ing.bdd.model.WithdrawBillsInput;
+import graphql.GraphQLError;
+import io.vavr.control.Either;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -14,7 +15,7 @@ import java.util.List;
 @Service
 public class ATMService {
     private final FundsStorage fundsStorage;
-    private final WithdrawTracker withdrawTracker;
+    private final FeeCalculator feeCalculator;
 
     public Balance retrieveBalance(String accountNr) {
         return new Balance(
@@ -23,11 +24,11 @@ public class ATMService {
         );
     }
 
-    public List<BillSet> withdrawBills(WithdrawBillsInput input) {
+    public Either<GraphQLError,List<BillSet>> withdrawBills(WithdrawBillsInput input) {
         return fundsStorage.withdrawBills(input.getAccountNr(), input.getAmount());
     }
 
-    public BillSetWrapper withdrawBillsWithFees(WithdrawBillsInput input) {
-        return withdrawTracker.withdrawBillsWithFees(input.getAccountNr(), input.getAmount());
+    public Either<GraphQLError, List<BillSet>> withdrawBillsWithFees(WithdrawBillsInput input) {
+        return feeCalculator.withdrawBillsWithFees(input.getAccountNr(), input.getAmount());
     }
 }
