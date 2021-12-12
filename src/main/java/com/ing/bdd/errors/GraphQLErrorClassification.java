@@ -7,7 +7,7 @@ import java.util.function.Function;
 public enum GraphQLErrorClassification implements ErrorClassification {
     INVALID_INPUT(fun("The input must contain %s.")),
     UPSTREAM_SERVICE_FAILED(fun("Upstream service \"%s\" failed.")),
-    INSUFFICIENT_FUNDS(fun("Insufficient balance to withdraw %s."));
+    INSUFFICIENT_FUNDS(fun("Insufficient balance to withdraw %s Euros."));
 
     private final Function<String, String> errorMessageFun;
 

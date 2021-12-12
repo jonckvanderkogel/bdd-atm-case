@@ -18,7 +18,7 @@ import static com.ing.bdd.tailrecursion.TailCalls.done;
 
 @RequiredArgsConstructor
 public class FundsStorage {
-    private final BiFunction<Integer,Integer,Integer> random;
+    private final BiFunction<Integer, Integer, Integer> random;
     private final Map<Bill, Integer> billsPresent;
 
     private final Map<String, Integer> database = new HashMap<>();
@@ -33,42 +33,60 @@ public class FundsStorage {
     }
 
     public synchronized Either<GraphQLError, java.util.List<BillSet>> withdrawBills(String accountNr, Integer amountRequested) {
-        return deductAmountRequestedFromBalance(accountNr, amountRequested)
-            .map(a -> determineBillSets(Bill.possibleBills(), List.empty(), a).invoke().toJavaList());
+        return determineBillsPresent(Bill.possibleBills(), List.empty(), amountRequested).invoke()
+            .flatMap(b -> checkBalanceSufficient(accountNr, amountRequested, b))
+            .map(this::removeBillsFromATM)
+            .map(b -> deductAmountFromBalance(accountNr, b).toJavaList());
     }
 
-    private Either<GraphQLError, Integer> deductAmountRequestedFromBalance(String accountNr, Integer amountRequested) {
-        Integer currentFunds = database.computeIfAbsent(accountNr, i -> initializeAccount());
-
-        if (currentFunds >= amountRequested) {
-            database.put(accountNr, currentFunds - amountRequested);
-            return Either.right(amountRequested);
-        } else {
-            return createLeft(INSUFFICIENT_FUNDS, String.valueOf(amountRequested));
-        }
-    }
-
-    private TailCall<List<BillSet>> determineBillSets(List<Bill> possibleBills,
-                                                      List<BillSet> billSets,
-                                                      Integer amount) {
-        if (possibleBills.isEmpty() || amount == 0) {
-            return done(billSets);
+    private TailCall<Either<GraphQLError, List<BillSet>>> determineBillsPresent(List<Bill> possibleBills,
+                                                                                List<BillSet> billSets,
+                                                                                Integer amount) {
+        if (amount == 0 || possibleBills.isEmpty()) {
+            return done(Either.right(billSets));
         } else {
             Bill bill = possibleBills.head();
-            BillSet billSet = takeBills(bill, amount);
-            return () -> determineBillSets(possibleBills.tail(),
+            BillSet billSet = determineBillsToTake(bill, amount);
+            return () -> determineBillsPresent(possibleBills.tail(),
                 billSet.getNr() > 0 ? billSets.append(billSet) : billSets,
                 amount - billSet.getBill().getIntValue() * billSet.getNr()
             );
         }
     }
 
-    private BillSet takeBills(Bill bill, Integer amount) {
-        int nrOfBillsWanted = amount/bill.getIntValue();
-        int nrOfBillsTaken = Math.min(nrOfBillsWanted, billsPresent.get(bill));
+    private BillSet determineBillsToTake(Bill bill, Integer amount) {
+        int nrOfBillsWanted = amount / bill.getIntValue();
+        int nrOfBillsToTake = Math.min(nrOfBillsWanted, billsPresent.get(bill));
 
-        billsPresent.put(bill, billsPresent.get(bill) - nrOfBillsTaken);
+        return new BillSet(bill, nrOfBillsToTake);
+    }
 
-        return new BillSet(bill, nrOfBillsTaken);
+    private Either<GraphQLError, List<BillSet>> checkBalanceSufficient(String accountNr, Integer amountRequested, List<BillSet> billSets) {
+        Integer currentFunds = database.computeIfAbsent(accountNr, i -> initializeAccount());
+
+        if (currentFunds >= determineValueOfBillSets(billSets)) {
+            return Either.right(billSets);
+        } else {
+            return createLeft(INSUFFICIENT_FUNDS, String.valueOf(amountRequested));
+        }
+    }
+
+    private Integer determineValueOfBillSets(List<BillSet> billSets) {
+        return billSets
+            .map(b -> b.getBill().getIntValue() * b.getNr())
+            .reduce(Integer::sum);
+    }
+
+    private List<BillSet> removeBillsFromATM(List<BillSet> billSets) {
+        billSets.forEach(b -> billsPresent.put(b.getBill(), billsPresent.get(b.getBill()) - b.getNr()));
+
+        return billSets;
+    }
+
+    private List<BillSet> deductAmountFromBalance(String accountNr, List<BillSet> billSets) {
+        Integer currentFunds = database.computeIfAbsent(accountNr, i -> initializeAccount());
+        database.put(accountNr, currentFunds - determineValueOfBillSets(billSets));
+
+        return billSets;
     }
 }
