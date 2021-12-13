@@ -1,11 +1,8 @@
 package com.ing.bdd.testutil;
 
-import lombok.RequiredArgsConstructor;
-
 import java.util.function.BiFunction;
 
-@RequiredArgsConstructor
-public class FaultyAtmFun implements BiFunction<Integer, Integer, Integer> {
+public class CrashOnFirstAttemptATM implements BiFunction<Integer, Integer, Integer> {
     private Integer value = 9;
 
     @Override

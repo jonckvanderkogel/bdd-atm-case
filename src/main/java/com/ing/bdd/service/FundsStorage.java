@@ -36,7 +36,14 @@ public class FundsStorage {
         return determineBillsPresent(Bill.possibleBills(), List.empty(), amountRequested).invoke()
             .flatMap(b -> checkBalanceSufficient(accountNr, amountRequested, b))
             .map(this::removeBillsFromATM)
-            .map(b -> deductAmountFromBalance(accountNr, b).toJavaList());
+            .map(b -> deductBillsFromBalance(accountNr, b).toJavaList());
+    }
+
+    public synchronized Either<GraphQLError, java.util.List<BillSet>> withdrawBillsWithFees(String accountNr, Integer amountRequested, Integer fee) {
+        return determineBillsPresent(Bill.possibleBills(), List.empty(), amountRequested).invoke()
+            .flatMap(b -> checkBalanceSufficient(accountNr, amountRequested + fee, b))
+            .map(this::removeBillsFromATM)
+            .map(b -> deductBillsWithFeeFromBalance(accountNr, b, fee).toJavaList());
     }
 
     private TailCall<Either<GraphQLError, List<BillSet>>> determineBillsPresent(List<Bill> possibleBills,
@@ -83,10 +90,20 @@ public class FundsStorage {
         return billSets;
     }
 
-    private List<BillSet> deductAmountFromBalance(String accountNr, List<BillSet> billSets) {
-        Integer currentFunds = database.computeIfAbsent(accountNr, i -> initializeAccount());
-        database.put(accountNr, currentFunds - determineValueOfBillSets(billSets));
+    private List<BillSet> deductBillsFromBalance(String accountNr, List<BillSet> billSets) {
+        deductAmountFromBalance(accountNr, determineValueOfBillSets(billSets));
 
         return billSets;
+    }
+
+    private List<BillSet> deductBillsWithFeeFromBalance(String accountNr, List<BillSet> billSets, Integer fee) {
+        deductAmountFromBalance(accountNr, determineValueOfBillSets(billSets) + fee);
+
+        return billSets;
+    }
+
+    private void deductAmountFromBalance(String accountNr, Integer amountToDeduct) {
+        Integer currentFunds = database.computeIfAbsent(accountNr, i -> initializeAccount());
+        database.put(accountNr, currentFunds - amountToDeduct);
     }
 }

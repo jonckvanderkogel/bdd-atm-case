@@ -7,7 +7,7 @@ import com.ing.bdd.model.WithdrawBillsInput;
 import com.ing.bdd.service.ATMService;
 import com.ing.bdd.service.FeeCalculator;
 import com.ing.bdd.service.FundsStorage;
-import com.ing.bdd.testutil.FaultyAtmFun;
+import com.ing.bdd.testutil.CrashOnFirstAttemptATM;
 import graphql.GraphQLError;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.en.And;
@@ -42,7 +42,7 @@ public class StepDefinitions {
 
     @And("the ATM is faulty")
     public void aFaultyATM() {
-        feeCalculator = new FeeCalculator(fundsStorage, new FaultyAtmFun());
+        feeCalculator = new FeeCalculator(fundsStorage, new CrashOnFirstAttemptATM());
         atmService = new ATMService(fundsStorage, feeCalculator);
     }
 

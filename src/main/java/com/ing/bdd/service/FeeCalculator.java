@@ -24,8 +24,8 @@ public class FeeCalculator {
     }
 
     public synchronized Either<GraphQLError, List<BillSet>> withdrawBillsWithFees(String accountNr, Integer amountRequested) {
-        Integer amountToDeduct = calculateAmountIncludingFees(accountNr, amountRequested);
-        Either<GraphQLError, List<BillSet>> result = withdrawBills(accountNr, amountToDeduct);
+        Integer fee = calculateFee(accountNr, amountRequested);
+        Either<GraphQLError, List<BillSet>> result = withdrawWithFees(accountNr, amountRequested, fee);
 
         if (withdrawSuccess(result)) {
             updateWithdrawalCounter(accountNr);
@@ -33,14 +33,14 @@ public class FeeCalculator {
         return result;
     }
 
-    private Either<GraphQLError, List<BillSet>> withdrawBills(String accountNr, Integer amountToDeduct) {
+    private Either<GraphQLError, List<BillSet>> withdrawWithFees(String accountNr, Integer amountRequested, Integer fee) {
         return atmLive()
-            .flatMap(live -> fundsStorage.withdrawBills(accountNr, amountToDeduct));
+            .flatMap(live -> fundsStorage.withdrawBillsWithFees(accountNr, amountRequested, fee));
     }
 
-    private Integer calculateAmountIncludingFees(String accountNr, Integer amountRequested) {
+    private Integer calculateFee(String accountNr, Integer amountRequested) {
         Integer amountOfWithdrawals = database.computeIfAbsent(accountNr, i -> initializeCounter());
-        return amountOfWithdrawals >= 1 ? amountRequested / 50 + amountRequested + 1 : amountRequested;
+        return amountOfWithdrawals >= 1 ? amountRequested / 50 + 1 : 0;
     }
 
     private Either<GraphQLError, Boolean> atmLive() {
@@ -52,6 +52,6 @@ public class FeeCalculator {
     }
 
     private boolean withdrawSuccess(Either<GraphQLError, List<BillSet>> result) {
-        return result.isRight() || result.isLeft();
+        return result.isRight();
     }
 }
