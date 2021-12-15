@@ -48,17 +48,14 @@ public class ATMServiceTest {
     }
 
     @Test
-    public void withdrawBillsNotEnoughCashAvailable() {
+    public void errorMessageNotEnoughCashAvailable() {
         FundsStorage fundsStorage = new FundsStorage(randomFun, onlyFewTens);
         FeeCalculator feeCalculator = new FeeCalculator(fundsStorage, atmCrashRandomFun);
         ATMService atmService = new ATMService(fundsStorage, feeCalculator);
 
-        List<BillSet> billSets = atmService.withdrawBills(new WithdrawBillsInput(100, "123")).get();
+        GraphQLError error = atmService.withdrawBills(new WithdrawBillsInput(100, "123")).getLeft();
 
-        // even though I requested 100, I only expect to get 5 10s as
-        assertEquals(1, billSets.size());
-        assertEquals(5, billSets.get(0).getNr());
-        assertEquals(Bill.TEN, billSets.get(0).getBill());
+        assertEquals("The amount is not available.", error.getMessage());
     }
 
     @Test

@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiFunction;
 
+import static com.ing.bdd.errors.GraphQLErrorClassification.INSUFFICENT_BILLS_PRESENT;
 import static com.ing.bdd.errors.GraphQLErrorClassification.INSUFFICIENT_FUNDS;
 import static com.ing.bdd.graphql.GraphQLUtils.createLeft;
 import static com.ing.bdd.tailrecursion.TailCalls.done;
@@ -49,8 +50,10 @@ public class FundsStorage {
     private TailCall<Either<GraphQLError, List<BillSet>>> determineBillsPresent(List<Bill> possibleBills,
                                                                                 List<BillSet> billSets,
                                                                                 Integer amount) {
-        if (amount == 0 || possibleBills.isEmpty()) {
+        if (amount == 0) {
             return done(Either.right(billSets));
+        } else if (possibleBills.isEmpty()) {
+            return done(createLeft(INSUFFICENT_BILLS_PRESENT, ""));
         } else {
             Bill bill = possibleBills.head();
             BillSet billSet = determineBillsToTake(bill, amount);

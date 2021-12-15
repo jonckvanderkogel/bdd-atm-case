@@ -87,4 +87,26 @@ public class StepDefinitions {
         Balance balance = atmService.retrieveBalance(accountNr);
         assertThat(balance.getAmount()).isEqualTo(amount);
     }
+
+    @Given("the customer is at the ATM")
+    public void the_customer_is_at_the_atm() {
+        // we assume the customer to be at the ATM
+    }
+
+    @When("he fills in the amount of {int}")
+    public void he_fills_in_the_amount_of(Integer amount) {
+        Map<Bill, Integer> alwaysEnoughCash = generateBillMap(amount, amount, amount, amount);
+        fundsStorage = new FundsStorage((i, j) -> amount, alwaysEnoughCash);
+        feeCalculator = new FeeCalculator(fundsStorage, (i, j) -> 1);
+        atmService = new ATMService(fundsStorage, feeCalculator);
+
+        error = atmService
+                .withdrawBills(new WithdrawBillsInput(amount, accountNr))
+                .getLeft();
+
+    }
+    @Then("the customer needs to be shown a message {string}")
+    public void the_customer_needs_to_be_shown_a_message(String errorMessage) {
+        assertThat(error.getMessage()).isEqualTo(errorMessage);
+    }
 }
